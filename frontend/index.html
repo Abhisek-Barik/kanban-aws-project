@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kanban Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>Kanban Pro</h1>
+    <input type="text" id="search" placeholder="🔍 Search tasks..." onkeyup="loadTasks()">
+</header>
+
+<section class="task-input">
+    <input type="text" id="taskInput" placeholder="Task title">
+    <input type="date" id="dueDate">
+    <button onclick="addTask()">Add Task</button>
+</section>
+
+<section class="stats">
+    <div>Total <span id="total">0</span></div>
+    <div>Todo <span id="todoCount">0</span></div>
+    <div>Progress <span id="progressCount">0</span></div>
+    <div>Done <span id="doneCount">0</span></div>
+</section>
+
+<section class="board">
+    <div class="column" id="todo" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h2>To Do</h2>
+    </div>
+
+    <div class="column" id="inprogress" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h2>In Progress</h2>
+    </div>
+
+    <div class="column" id="done" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h2>Done</h2>
+    </div>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
