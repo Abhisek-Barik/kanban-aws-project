@@ -1,14 +1,15 @@
-const API = "http://127.0.0.1:5000/tasks";
+// ================= CONFIG =================
+const BASE_URL = "http://18.61.87.118:5000";
 
-// Get search input safely
+// ================= UTIL =================
 function getSearchText() {
     const el = document.getElementById("search");
     return el ? el.value.toLowerCase() : "";
 }
 
-// Load tasks
+// ================= LOAD TASKS =================
 function loadTasks() {
-    fetch(API)
+    fetch(`${BASE_URL}/tasks`)
     .then(res => res.json())
     .then(data => {
 
@@ -16,25 +17,28 @@ function loadTasks() {
 
         // Reset columns
         ["todo", "inprogress", "done"].forEach(col => {
-            document.getElementById(col).innerHTML = `<h2>${col.toUpperCase()}</h2>`;
+            const colDiv = document.getElementById(col);
+            if (colDiv) {
+                colDiv.innerHTML = `<h2>${col.toUpperCase()}</h2>`;
+            }
         });
 
-        // Handle optional All Tasks section
+        // Optional all tasks section
         const allTasksDiv = document.getElementById("allTasks");
         if (allTasksDiv) allTasksDiv.innerHTML = "";
 
         let todo = 0, progress = 0, done = 0;
 
-        // Filter + render
         data
         .filter(task => task.title.toLowerCase().includes(searchText))
         .forEach(task => {
 
-            // Count stats
+            // Stats
             if(task.status === "todo") todo++;
             if(task.status === "inprogress") progress++;
             if(task.status === "done") done++;
 
+            // Task card
             const div = document.createElement("div");
             div.className = "task";
             div.draggable = true;
@@ -43,34 +47,36 @@ function loadTasks() {
             div.innerHTML = `
                 <strong>${task.title}</strong>
                 <small>📅 ${task.due_date || "No date"}</small>
-                <br>
-                <button onclick="editTask('${task.id}')">✏️</button>
-                <button onclick="deleteTask('${task.id}')">🗑️</button>
+                <br><br>
+                <button onclick="editTask('${task.id}')">✏️ Edit</button>
+                <button onclick="deleteTask('${task.id}')">🗑️ Delete</button>
             `;
 
             div.ondragstart = drag;
 
-            // Add to Kanban column
-            document.getElementById(task.status).appendChild(div);
+            // Append to column
+            const colDiv = document.getElementById(task.status);
+            if (colDiv) colDiv.appendChild(div);
 
-            // Add to All Tasks (if exists)
+            // All tasks view
             if (allTasksDiv) {
                 const clone = div.cloneNode(true);
                 allTasksDiv.appendChild(clone);
             }
         });
 
-        // Update stats (safe check)
+        // Stats update
         if (document.getElementById("total")) {
             document.getElementById("total").innerText = data.length;
             document.getElementById("todoCount").innerText = todo;
             document.getElementById("progressCount").innerText = progress;
             document.getElementById("doneCount").innerText = done;
         }
-    });
+    })
+    .catch(err => console.error("Error loading tasks:", err));
 }
 
-// Add task
+// ================= ADD TASK =================
 function addTask() {
     const title = document.getElementById("taskInput").value;
     const dueDate = document.getElementById("dueDate").value;
@@ -80,47 +86,50 @@ function addTask() {
         return;
     }
 
-    fetch(API, {
+    fetch(`${BASE_URL}/tasks`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             title: title,
             due_date: dueDate
         })
-    }).then(() => {
+    })
+    .then(() => {
         document.getElementById("taskInput").value = "";
         document.getElementById("dueDate").value = "";
         loadTasks();
     });
 }
 
-// Edit task
+// ================= EDIT TASK =================
 function editTask(id) {
     const newTitle = prompt("Enter new title:");
     const newDate = prompt("Enter new due date (YYYY-MM-DD):");
 
     if (!newTitle) return;
 
-    fetch(API + "/" + id, {
+    fetch(`${BASE_URL}/tasks/${id}`, {
         method: "PUT",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             title: newTitle,
             due_date: newDate
         })
-    }).then(() => loadTasks());
+    })
+    .then(() => loadTasks());
 }
 
-// Delete task
+// ================= DELETE TASK =================
 function deleteTask(id) {
     if (!confirm("Are you sure you want to delete this task?")) return;
 
-    fetch(API + "/" + id, {
+    fetch(`${BASE_URL}/tasks/${id}`, {
         method: "DELETE"
-    }).then(() => loadTasks());
+    })
+    .then(() => loadTasks());
 }
 
-// Drag functions
+// ================= DRAG & DROP =================
 function allowDrop(e) {
     e.preventDefault();
 }
@@ -134,18 +143,19 @@ function drop(e) {
     const id = e.dataTransfer.getData("text");
     const status = e.currentTarget.id;
 
-    fetch(API + "/" + id, {
+    fetch(`${BASE_URL}/tasks/${id}`, {
         method: "PUT",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ status })
-    }).then(() => loadTasks());
+    })
+    .then(() => loadTasks());
 }
 
-// Auto search trigger
+// ================= SEARCH =================
 const searchBox = document.getElementById("search");
 if (searchBox) {
     searchBox.addEventListener("keyup", loadTasks);
 }
 
-// Initial load
+// ================= INITIAL LOAD =================
 loadTasks();
